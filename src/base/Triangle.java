@@ -27,6 +27,6 @@ public class Triangle implements Comparable<Triangle> {
 
     @Override
     public int compareTo(Triangle t) {
-        return Float.compare(distToCamera, t.distToCamera);
+        return Float.compare(t.distToCamera, distToCamera);
     }
 }

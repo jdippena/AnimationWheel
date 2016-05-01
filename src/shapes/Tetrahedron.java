@@ -14,12 +14,12 @@ import java.util.ArrayList;
 public class Tetrahedron extends AbstractShape {
 
     public Tetrahedron() {
-        super(new ArrayList<>(4), 0x880000);
+        super(new ArrayList<>(4), 0x0);
         float[][] p = {
-                {1, 0, -1/ (float) Math.sqrt(2),1},
-                {-1, 0, -1/ (float) Math.sqrt(2),1},
-                {0, 1, 1/ (float) Math.sqrt(2),1},
-                {0, -1, 1/ (float) Math.sqrt(2),1}
+                {0, 0, 0,1},
+                {1, 0, 0,1},
+                {0.5f, 0, -(float) Math.sqrt(3)/2,1},
+                {0.5f,1,-(float) Math.sqrt(3)/4, 1}
         };
 
         mesh.add(new Triangle(new float[][]{p[0], p[1], p[2]}, Color.RED.getRGB()));

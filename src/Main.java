@@ -31,6 +31,7 @@ public class Main extends Application implements EventHandler<KeyEvent> {
     ArrayList<AbstractShape> shapes = new ArrayList<>();
     ArrayList<AbstractLight> lights = new ArrayList<>();
     Matrix.Builder builder = new Matrix.Builder();
+    PriorityQueue<Triangle> drawTriangles = new PriorityQueue<>(100);
     private float angle = 0;
 
     public static void main(String[] args) throws InterruptedException {
@@ -51,17 +52,6 @@ public class Main extends Application implements EventHandler<KeyEvent> {
         GraphicsContext context = canvas.getGraphicsContext2D();
         root.getChildren().add(canvas);
 
-        AmbientLight ambientLight = new AmbientLight(0.3f, 0xffffff);
-        lights.add(ambientLight);
-
-        Cube lightCube = new Cube();
-        lightCube.setEmissive(true);
-        float[] lightPos = new float[] {0,200,0,1};
-        lightCube.setTransform(new Matrix.Builder().scale(10).translate(lightPos).build());
-        shapes.add(lightCube);
-        PointLight pointLight = new PointLight(1, 0xffffff, lightPos, 500);
-        lights.add(pointLight);
-
         Tetrahedron t = new Tetrahedron();
         shapes.add(t);
 
@@ -70,6 +60,26 @@ public class Main extends Application implements EventHandler<KeyEvent> {
 
         Axes a = new Axes();
         shapes.add(a);
+
+
+        AmbientLight ambientLight = new AmbientLight(0.3f, 0xffffff);
+        lights.add(ambientLight);
+
+        Cube lightCube1 = new Cube();
+        lightCube1.setEmissive(true);
+        float[] lightPos1 = new float[] {0,200,0,1};
+        lightCube1.setTransform(new Matrix.Builder().scale(10).translate(lightPos1).build());
+        shapes.add(lightCube1);
+        PointLight pointLight1 = new PointLight(1, 0xffffff, lightPos1, 500);
+        lights.add(pointLight1);
+
+        Cube lightCube2 = new Cube();
+        lightCube2.setEmissive(true);
+        float[] lightPos2 = new float[] {-20, 5, 0, 1};
+        lightCube2.setTransform(new Matrix.Builder().translate(lightPos2).build());
+        shapes.add(lightCube2);
+        PointLight pointLight2 = new PointLight(1, 0xffffff, lightPos2, 200);
+        lights.add(pointLight2);
 
         camera.setPos(new float[] {0, 0, 100, 1});
         camera.faceTowardsOrigin();
@@ -90,14 +100,13 @@ public class Main extends Application implements EventHandler<KeyEvent> {
     private void step(GraphicsContext context, long time) {
         // clear canvas to draw again
         context.clearRect(0, 0, width, height);
-        PriorityQueue<Triangle> drawTriangles = new PriorityQueue<>(100);
 
         angle = (angle + 1f*(time-last)/(16.66666f*1000000)) % 360;
         float[][] tetrahedronMatrix = builder
                 .reset()
                 .scale(20)
                 .translate(0,0,0)
-                .rotateZ(angle)
+                .rotateY(60)
                 .build();
         shapes.get(0).setTransform(tetrahedronMatrix);
 
@@ -105,7 +114,7 @@ public class Main extends Application implements EventHandler<KeyEvent> {
                 .reset()
                 .scale(20)
                 .translate(0,0,-400)
-                .rotateY(-angle)
+                .rotateY(angle)
                 .build();
         shapes.get(1).setTransform(cubeMatrix);
 
@@ -121,14 +130,15 @@ public class Main extends Application implements EventHandler<KeyEvent> {
                 float[] norm = Mat.cross(edge1, edge2);
 
                 // With perspective instead of isometric, we use this instead of the raw facing
-                float[] toTri = Mat.subtract(camera.pos,points[0]);
+                float[] toTri = Mat.subtract(camera.pos,points[1]);
 
                 if(Mat.dot(norm, toTri)<0) {
                     drawTriangles.add(new Triangle(points, t.color, t.emissive, Mat.magnitude(toTri)));
                 }
             }
         }
-        for (Triangle t : drawTriangles) {
+        for (int i = 0; i < drawTriangles.size(); i++) {
+            Triangle t = drawTriangles.poll();
             t = camera.look(t, lights);
             if (t.points != null) {
                 double[][] coords = pointsToDisplayPoints(t.points);
