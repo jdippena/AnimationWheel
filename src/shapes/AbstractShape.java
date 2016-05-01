@@ -19,23 +19,17 @@ public abstract class AbstractShape {
         this.color = color;
     }
 
-    public void addTriangle(Triangle t) {
-        mesh.add(t);
-    }
-
-    public void addTriangles(List<Triangle> triangles) {
-        mesh.addAll(triangles);
-    }
-
-    public void setMesh(List<Triangle> mesh) {
-        this.mesh = mesh;
-    }
-
     public void setColor(int color) {
         this.color = color;
     }
 
     public void setTransform(float[][] transform) {
         this.transform = transform;
+    }
+
+    public void setEmissive(boolean emissive) {
+        for (Triangle t : mesh) {
+            t.emissive = emissive;
+        }
     }
 }

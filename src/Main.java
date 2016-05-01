@@ -20,6 +20,7 @@ import shapes.Cube;
 import shapes.Tetrahedron;
 
 import java.util.ArrayList;
+import java.util.PriorityQueue;
 
 public class Main extends Application implements EventHandler<KeyEvent> {
     private int width = 800;
@@ -54,9 +55,11 @@ public class Main extends Application implements EventHandler<KeyEvent> {
         lights.add(ambientLight);
 
         Cube lightCube = new Cube();
+        lightCube.setEmissive(true);
         float[] lightPos = new float[] {0,200,0,1};
         lightCube.setTransform(new Matrix.Builder().scale(10).translate(lightPos).build());
-        PointLight pointLight = new PointLight(1, 0xffffff, lightPos, lightCube, 500);
+        shapes.add(lightCube);
+        PointLight pointLight = new PointLight(1, 0xffffff, lightPos, 500);
         lights.add(pointLight);
 
         Tetrahedron t = new Tetrahedron();
@@ -87,6 +90,7 @@ public class Main extends Application implements EventHandler<KeyEvent> {
     private void step(GraphicsContext context, long time) {
         // clear canvas to draw again
         context.clearRect(0, 0, width, height);
+        PriorityQueue<Triangle> drawTriangles = new PriorityQueue<>(100);
 
         angle = (angle + 1f*(time-last)/(16.66666f*1000000)) % 360;
         float[][] tetrahedronMatrix = builder
@@ -107,42 +111,32 @@ public class Main extends Application implements EventHandler<KeyEvent> {
 
         for (AbstractShape s : shapes) {
             for (Triangle t : s.mesh) {
-                render(context, t, s.transform, false);
-            }
-        }
+                // This applies the movements we've made to the shapes
+                float[][] points=Mat.matrixPointMult(s.transform, t.points);
 
-        for (AbstractLight l : lights) {
-            if (l.shape != null) {
-                for (Triangle t : l.shape.mesh) {
-                    render(context, t, l.shape.transform, true);
+                // Cull tris facing away (which solves depth-checking for simple shapes)
+                // This needs to be done before applying perspective
+                float[] edge1= Mat.subtract(points[0], points[1]);
+                float[] edge2= Mat.subtract(points[0], points[2]);
+                float[] norm = Mat.cross(edge1, edge2);
+
+                // With perspective instead of isometric, we use this instead of the raw facing
+                float[] toTri = Mat.subtract(camera.pos,points[0]);
+
+                if(Mat.dot(norm, toTri)<0) {
+                    drawTriangles.add(new Triangle(points, t.color, t.emissive, Mat.magnitude(toTri)));
                 }
             }
         }
-        last = time;
-    }
-
-    private void render(GraphicsContext context, Triangle t, float[][] transform, boolean emissive) {
-        // This applies the movements we've made to the shapes
-        float[][] points=Mat.matrixPointMult(transform, t.points);
-
-        // Cull tris facing away (which solves depth-checking for simple shapes)
-        // This needs to be done before applying perspective
-        float[] edge1= Mat.subtract(points[0], points[1]);
-        float[] edge2= Mat.subtract(points[0], points[2]);
-        float[] norm = Mat.cross(edge1, edge2);
-
-        // With perspective instead of isometric, we use this instead of the raw facing
-        float[] toTri = Mat.subtract(camera.pos,points[0]);
-
-        if(Mat.dot(norm, toTri)<0) {
-            Camera.PointsAndColor pc = new Camera.PointsAndColor(points, t.color);
-            pc = camera.look(pc, lights, emissive);
-            if (pc.points != null) {
-                double[][] coords = pointsToDisplayPoints(pc.points);
-                context.setFill(Color.rgb((pc.color & 0xff0000) >> 16, (pc.color & 0x00ff00) >> 8, pc.color & 0x0000ff));
+        for (Triangle t : drawTriangles) {
+            t = camera.look(t, lights);
+            if (t.points != null) {
+                double[][] coords = pointsToDisplayPoints(t.points);
+                context.setFill(Color.rgb((t.color & 0xff0000) >> 16, (t.color & 0x00ff00) >> 8, t.color & 0x0000ff));
                 context.fillPolygon(coords[0], coords[1], 3);
             }
         }
+        last = time;
     }
 
     @Override

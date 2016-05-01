@@ -15,9 +15,8 @@ public class PointLight extends AbstractLight {
         this.pos = pos;
     }
 
-    public PointLight(float intensity, int color, float[] pos, AbstractShape shape, int attenuationFactor) {
+    public PointLight(float intensity, int color, float[] pos, int attenuationFactor) {
         this(intensity, color, pos);
-        this.shape = shape;
         this.attenuationFactor = attenuationFactor;
     }
 

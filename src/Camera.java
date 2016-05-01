@@ -117,18 +117,18 @@ public class Camera {
         isWorldViewDirty = true;
     }
 
-    public PointsAndColor look(PointsAndColor pointsAndColor, ArrayList<AbstractLight> lights, boolean emissive) {
+    public Triangle look(Triangle t, ArrayList<AbstractLight> lights) {
         if (isWorldViewDirty) {
             worldView = makeWorldViewMatrix();
             isWorldViewDirty = false;
         }
-        float[][] points = Mat.matrixPointMult(worldView, pointsAndColor.points); // puts into world view space
-        pointsAndColor.color = light(pointsAndColor, lights, emissive);
+        float[][] points = Mat.matrixPointMult(worldView, t.points); // puts into world view space
+        t.color = light(t, lights);
         points = Mat.matrixPointMult(projectMatrix, points); // puts in clip space
         points = perspectiveDivide(points); // puts into NDC
         // TODO: better clipping algorithm
-        pointsAndColor.points = clip(points);
-        return pointsAndColor;
+        t.points = clip(points);
+        return t;
     }
 
     /**
@@ -148,11 +148,11 @@ public class Camera {
         };
     }
 
-    private int light(PointsAndColor pointsAndColor, ArrayList<AbstractLight> lights, boolean emissive) {
-        int color = pointsAndColor.color;
-        float[][] points = pointsAndColor.points;
+    private int light(Triangle t, ArrayList<AbstractLight> lights) {
+        int color = t.color;
+        float[][] points = t.points;
         float[] norm = Mat.normalize(Mat.cross(Mat.subtract(points[1], points[0]), Mat.subtract(points[2], points[0])));
-        norm = emissive ? Mat.mult(norm, -1) : norm;
+        norm = t.emissive ? Mat.mult(norm, -1) : norm;
         int[] colors = new int[lights.size()];
         for (int i = 0; i < lights.size(); i++) {
             colors[i] = lights.get(i).light(points, norm, color);
@@ -194,16 +194,5 @@ public class Camera {
             worldViewPoints[i] = Mat.mult(worldViewPoints[i], 1/worldViewPoints[i][3]);
         }
         return worldViewPoints;
-    }
-
-    // Because Java is silly, we need a holder to return a float[][] and an int for the triangle's color
-    public static class PointsAndColor {
-        public float[][] points;
-        public int color;
-
-        PointsAndColor(float[][] points, int color) {
-            this.points = points;
-            this.color = color;
-        }
     }
 }
